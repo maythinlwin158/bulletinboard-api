@@ -1,14 +1,9 @@
 package Bulletinboard.Controller
 
-import Bulletinboard.DTO.PostEditDTO
 import Bulletinboard.DTO.UserListDTO
-import Bulletinboard.UserListDao
 import Bulletinboard.form.PasswordForm
-import Bulletinboard.form.PostForm
 import Bulletinboard.form.UserEditForm
 import Bulletinboard.form.UserForm
-import Bulletinboard.model.Posts
-import Bulletinboard.model.Users
 import Bulletinboard.service.UserService
 import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
@@ -20,20 +15,39 @@ import javax.validation.Valid
 @RestController
 class UserController(private val userService: UserService) {
 
+    /**
+     * Get ALL Users
+     *
+     * @param name String
+     * @param email String
+     * @param page Integer
+     * @return UserListDTO
+     */
     @GetMapping("/users")
     fun getAllUsers(@RequestParam("name", defaultValue = "")name: String
                     , @RequestParam("email", defaultValue = "")email: String
-                    , @RequestParam("created_from", defaultValue = "")created_from: String
-                    , @RequestParam("created_to", defaultValue = "")created_to: String
                     , @RequestParam("page", defaultValue = "1")page: Int): List<UserListDTO> =
-        userService.getAllUsers(name, email, created_from, created_to, PageRequest.of(page - 1, 3))
+        userService.getAllUsers(name, email, PageRequest.of(page - 1, 5))
 
+    /**
+     * Get User By Login User Id
+     *
+     * @return UserListDTO
+     */
     @GetMapping("/user")
     fun getUser(): ResponseEntity<UserListDTO> {
         return userService.getUserById(1).map { user ->
             ResponseEntity.ok(user)
         }.orElse(ResponseEntity.notFound().build())
     }
+
+    /**
+     * Create User
+     *
+     * @param userForm UserForm
+     * @param multipartFile MultipartFile
+     * @return String
+     */
     @PostMapping("/user")
     fun addUser(@Valid @RequestPart("user") userForm: UserForm, @RequestParam("image") multipartFile: MultipartFile): ResponseEntity<String> {
         return if (userService.createPost(userForm, multipartFile))
@@ -41,6 +55,12 @@ class UserController(private val userService: UserService) {
         else ResponseEntity.badRequest().body("insert failed")
     }
 
+    /**
+     * Get User By Id
+     *
+     * @param userId Integer
+     * @return UserListDTO
+     */
     @GetMapping("/user/{userId}")
     fun editUser(@PathVariable(value = "userId")userId: Int): ResponseEntity<UserListDTO> {
         return userService.getUserById(userId).map { user ->
@@ -48,16 +68,35 @@ class UserController(private val userService: UserService) {
         }.orElse(ResponseEntity.notFound().build())
     }
 
+    /**
+     * Update User By user Id
+     *
+     * @param userId Integer
+     * @param userForm UserEditForm
+     * @param multipartFile MultipartFile
+     * @return String
+     */
     @PutMapping("/user/{userId}")
     fun updateUser(@PathVariable(value = "userId")userId: Int, @Valid @RequestPart("user")userForm: UserEditForm, @RequestParam("image") multipartFile: MultipartFile): ResponseEntity<String> {
         return if (userService.updateUserById(userId, userForm, multipartFile)) ResponseEntity.ok("successfully update") else ResponseEntity.notFound().build()
     }
 
+    /**
+     * Delete User By Id
+     *
+     * @param userId Integer
+     */
     @DeleteMapping("/user/{userId}")
     fun deleteUser(@PathVariable(value = "userId")userId: Int): ResponseEntity<Void> {
         return if (userService.userDeleteById(userId)) ResponseEntity<Void>(HttpStatus.OK) else ResponseEntity.notFound().build()
     }
 
+    /**
+     * Change Password
+     *
+     * @param passwordForm passwordForm
+     * @return String
+     */
     @PutMapping("/user/password")
     fun changePwd(@Valid @RequestBody passwordForm: PasswordForm): ResponseEntity<String> {
         return userService.changePwd(passwordForm)

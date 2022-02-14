@@ -22,8 +22,23 @@ import java.util.*
 class UserService(private val userRepository: UserRepository) {
 
     val md = MessageDigest.getInstance("MD5")
-    fun getAllUsers(name: String, email: String, created_from: String, created_to: String, pageable: Pageable): List<UserListDTO> = userRepository.findAllUsers(name, email, created_from, created_to, pageable)
 
+    /**
+     * Get ALl Users
+     *
+     * @param name String
+     * @param email String
+     * @param pageable Pageable
+     * @return List<UserListDTO> UserListDTO
+     */
+    fun getAllUsers(name: String, email: String, pageable: Pageable): List<UserListDTO> = userRepository.findAllUsers(name, email, pageable)
+
+    /**
+     * Add User Into User Table
+     *
+     * @param userForm UserForm
+     * @param multipartFile MultipartFile
+     */
     fun createPost(userForm: UserForm, multipartFile: MultipartFile): Boolean {
 
         //Get Original Image File Name
@@ -55,8 +70,21 @@ class UserService(private val userRepository: UserRepository) {
         }
     }
 
+    /**
+     * Get Login User By ID
+     *
+     * @param userId Integer
+     * @return UserListDTO
+     */
     fun getUserById(userId: Int): Optional<UserListDTO> = userRepository.userById(userId)
 
+    /**
+     * Update User Into User Table
+     *
+     * @param userId Integer
+     * @param multipartFile MultipartFile
+     * @return true/false Boolean
+     */
     fun updateUserById(userId: Int, user: UserEditForm, multipartFile: MultipartFile): Boolean = userRepository.findById(userId).map { oldUser ->
 
         val fileName: String? = multipartFile.originalFilename?.let { StringUtils.cleanPath(it) }
@@ -76,6 +104,12 @@ class UserService(private val userRepository: UserRepository) {
         }
     }.orElse(false)
 
+    /**
+     * User Delete By User Id
+     *
+     * @param userId Integer
+     * @return true/false Boolean
+     */
     fun userDeleteById(userId: Int): Boolean {
         return userRepository.findById(userId).map { oldUser ->
             val newUser = oldUser.copy(deletedAt = LocalDateTime.now(), deletedUserId = 1)
@@ -84,6 +118,12 @@ class UserService(private val userRepository: UserRepository) {
         }.orElse(false)
     }
 
+    /**
+     * Change Password By Login User Id
+     *
+     * @param passwordForm PasswordForm
+     * @return ResponseEntity
+     */
     fun changePwd(passwordForm: PasswordForm): ResponseEntity<String> {
         return userRepository.findById(17).map { user ->
             if (user.password == BigInteger(1, md.digest(passwordForm.password?.toByteArray())).toString(16).padStart(32, '0')) {

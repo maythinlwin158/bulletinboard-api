@@ -38,7 +38,7 @@ class AuthController(private val userRepository: UserRepository) {
             ?: return ResponseEntity.badRequest().body(Message("user not found!"))
 
         val md = MessageDigest.getInstance("MD5")
-        if (user.password != BigInteger(1, md.digest(body.password?.toByteArray())).toString(16).padStart(32, '0')) {
+        if (user.password != BigInteger(1, md.digest(body.password.toByteArray())).toString(16).padStart(32, '0')) {
             return ResponseEntity.badRequest().body(Message("invalid password!"))
         }
 
