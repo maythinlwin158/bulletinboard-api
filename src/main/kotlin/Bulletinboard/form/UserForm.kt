@@ -6,19 +6,19 @@ import javax.validation.constraints.NotNull
 
 class UserForm {
 
-    @NotNull(message = "The name is required.")
+    @field:NotNull(message = "The name is required.")
     val name: String? = null
 
-    @NotNull(message = "The email is required.")
+    @field:NotNull(message = "The email is required.")
     val email: String? = null
 
-    @NotNull(message = "The password is required.")
+    @field:NotNull(message = "The password is required.")
     var password: String? = null
 
-    @NotNull(message = "Type is required")
+    @field:NotNull(message = "Type is required")
     val type: Boolean = true
 
-    @NotNull(message = "Ph no is required")
+    @field:NotNull(message = "Ph no is required")
     val phone: String? = null
 
     val address: String? = null

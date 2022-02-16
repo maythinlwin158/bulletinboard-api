@@ -50,6 +50,15 @@ class UserController(private val userService: UserService) {
      */
     @PostMapping("/user")
     fun addUser(@Valid @RequestPart("user") userForm: UserForm, @RequestParam("image") multipartFile: MultipartFile): ResponseEntity<String> {
+        if (multipartFile.isEmpty) {
+            return ResponseEntity.badRequest().body("profile can't be null")
+        }
+        if (userForm.name?.let { userService.findByName(it) } == false) {
+            return ResponseEntity.badRequest().body("name already exists")
+        }
+        if (userForm.email?.let { userService.findByEmail(it) } == false) {
+            return ResponseEntity.badRequest().body("email already exists")
+        }
         return if (userService.createPost(userForm, multipartFile))
             ResponseEntity.ok("success")
         else ResponseEntity.badRequest().body("insert failed")
@@ -78,6 +87,15 @@ class UserController(private val userService: UserService) {
      */
     @PutMapping("/user/{userId}")
     fun updateUser(@PathVariable(value = "userId")userId: Int, @Valid @RequestPart("user")userForm: UserEditForm, @RequestParam("image") multipartFile: MultipartFile): ResponseEntity<String> {
+        if(multipartFile.isEmpty) {
+            return ResponseEntity.badRequest().body("profile can't be null")
+        }
+        if (userForm.name?.let { userService.findByNameAndId(userId, it) } == true) {
+            return ResponseEntity.badRequest().body("name already exists")
+        }
+        if (userForm.email?.let { userService.findByEmailAndId(userId, it) } == true) {
+            return ResponseEntity.badRequest().body("email already exists")
+        }
         return if (userService.updateUserById(userId, userForm, multipartFile)) ResponseEntity.ok("successfully update") else ResponseEntity.notFound().build()
     }
 

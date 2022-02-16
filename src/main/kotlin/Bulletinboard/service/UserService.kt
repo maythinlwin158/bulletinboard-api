@@ -34,6 +34,22 @@ class UserService(private val userRepository: UserRepository) {
     fun getAllUsers(name: String, email: String, pageable: Pageable): List<UserListDTO> = userRepository.findAllUsers(name, email, pageable)
 
     /**
+     * Find User By Name
+     *
+     * @param name String
+     * @return Users
+     */
+    fun findByName(name: String): Boolean { return userRepository.findByName(name) == null }
+
+    /**
+     * Find User By email
+     *
+     * @param email String
+     * @return Users
+     */
+    fun findByEmail(email: String): Boolean { return userRepository.findByEmail(email) == null }
+
+    /**
      * Add User Into User Table
      *
      * @param userForm UserForm
@@ -69,6 +85,24 @@ class UserService(private val userRepository: UserRepository) {
             false
         }
     }
+
+    /**
+     * Get User By Name And Id
+     *
+     * @param userId Integer
+     * @param name String
+     * @return Boolean
+     */
+    fun findByNameAndId(userId: Int, name: String): Boolean { return userRepository.userByNameAndId(userId, name).isPresent }
+
+    /**
+     * Get Post By Email And Id
+     *
+     * @param userId Integer
+     * @param email String
+     * @return Boolean
+     */
+    fun findByEmailAndId(userId: Int, email: String): Boolean { return userRepository.userByEmailAndId(userId , email).isPresent }
 
     /**
      * Get Login User By ID
@@ -135,7 +169,7 @@ class UserService(private val userRepository: UserRepository) {
                 )
                 ResponseEntity.ok("successfully update")
             }
-            else ResponseEntity.badRequest().build()
+            else ResponseEntity.badRequest().body("old password doesn't match")
         }.orElse(ResponseEntity.notFound().build()
         )
     }

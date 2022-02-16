@@ -40,4 +40,22 @@ public interface PostRepository: CrudRepository<Posts, Int> {
      */
     @Query("SELECT p.title as title, p.description as description, p.status as status, p.createdUserId as createdUserId, p.updatedUserId as updatedUserId FROM Posts p WHERE p.deletedAt is null AND p.id = ?1")
     fun getPostById(postId: Int): Optional<PostEditDTO>
+
+    /**
+     * Find Posts By Title
+     *
+     * @param title String
+     * @return Posts
+     */
+    fun findByTitle(title: String): Posts?
+
+    /**
+     * Find Posts By Title AND ID
+     *
+     * @param postId Integer
+     * @param title String
+     * @return PostEditDTO
+     */
+    @Query("SELECT p.title as title, p.description as description, p.status as status, p.createdUserId as createdUserId, p.updatedUserId as updatedUserId FROM Posts p WHERE p.title = ?2 AND p.id != ?1 ")
+    fun findByTitleAndId(postId: Int, title: String): Optional<PostEditDTO>
 }

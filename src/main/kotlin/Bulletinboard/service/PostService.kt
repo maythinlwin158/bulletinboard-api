@@ -52,12 +52,29 @@ class PostService(private val postRepository: PostRepository) {
     }
 
     /**
+     * Find Post By Title
+     *
+     * @param title String
+     * @return Posts
+     */
+    fun findByTitle(title: String): Boolean { return postRepository.findByTitle(title) == null }
+
+    /**
      * Get Post By Id
      *
      * @param postId Integer
      * @return PostEditDTO
      */
     fun getPostById(postId: Int): Optional<PostEditDTO> = postRepository.getPostById(postId)
+
+    /**
+     * Get Post By Title And Id
+     *
+     * @param postId Integer
+     * @param title String
+     * @return Boolean
+     */
+    fun findByTitleAndId(postId: Int, title: String): Boolean { return postRepository.findByTitleAndId(postId, title).isPresent }
 
     /**
      * Update Post By Id

@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.validation.Errors
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import javax.validation.Valid
@@ -39,6 +40,9 @@ class PostController(private val postService: PostService, private val csvServic
      */
     @PostMapping("/post")
     fun createPost(@Valid @RequestBody post: PostForm): ResponseEntity<String> {
+        if (post.title?.let { postService.findByTitle(it) } == false) {
+            return ResponseEntity.badRequest().body("title already exists")
+        }
         return if (postService.createPost(post))
             ResponseEntity.ok("success")
         else ResponseEntity.badRequest().body("insert failed")
@@ -66,6 +70,9 @@ class PostController(private val postService: PostService, private val csvServic
      */
     @PutMapping("/post/{postId}")
     fun updatePost(@PathVariable(value = "postId")postId: Int,@Valid @RequestBody post: PostEditForm ): ResponseEntity<String> {
+        if (post.title?.let { postService.findByTitleAndId(postId, it) } == true) {
+            return ResponseEntity.badRequest().body("title already exists")
+        }
         return if (postService.updatePostById(postId, post)) ResponseEntity.ok("successfully update") else ResponseEntity.notFound().build()
     }
 
