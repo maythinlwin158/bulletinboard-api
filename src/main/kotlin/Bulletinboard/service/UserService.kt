@@ -1,17 +1,26 @@
 package Bulletinboard.service
 
+import Bulletinboard.DTO.UserDto
 import Bulletinboard.DTO.UserListDTO
 import Bulletinboard.form.PasswordForm
 import Bulletinboard.form.UserEditForm
 import Bulletinboard.form.UserForm
-import Bulletinboard.model.Users
+import Bulletinboard.model.Authority
+import Bulletinboard.repository.AuthorityRepository
+import Bulletinboard.security.USER
+import Bulletinboard.logging.Logging
+import Bulletinboard.model.User
 import Bulletinboard.repository.UserRepository
 import Bulletinboard.util.FileUploadUtil
 import org.springframework.data.domain.Pageable
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.util.StringUtils
 import org.springframework.web.multipart.MultipartFile
+import org.springframework.web.server.ResponseStatusException
 import java.math.BigInteger
 import java.security.MessageDigest
 import java.time.LocalDateTime
@@ -19,10 +28,14 @@ import java.util.*
 
 
 @Service
-class UserService(private val userRepository: UserRepository) {
+class UserService(
+    private  val userRepository: UserRepository,
+    private val authorityRepository: AuthorityRepository,
+    private val passwordEncoder: PasswordEncoder
+) : Logging {
 
-    val md = MessageDigest.getInstance("MD5")
-
+//    val md = MessageDigest.getInstance("MD5")
+//
     /**
      * Get ALl Users
      *
@@ -55,7 +68,7 @@ class UserService(private val userRepository: UserRepository) {
      * @param userForm UserForm
      * @param multipartFile MultipartFile
      */
-    fun createPost(userForm: UserForm, multipartFile: MultipartFile): Boolean {
+    fun createUser(userForm: UserForm, multipartFile: MultipartFile): Boolean {
 
         //Get Original Image File Name
         val fileName: String? = multipartFile.originalFilename?.let { StringUtils.cleanPath(it) }
@@ -63,17 +76,27 @@ class UserService(private val userRepository: UserRepository) {
             return false
         }
 
-        //Encrypt Password
-        userForm.password = BigInteger(1, md.digest(userForm.password?.toByteArray())).toString(16).padStart(32, '0')
+        val auth = SecurityContextHolder.getContext().authentication
+        val authUser = userRepository.findByName(auth.name)
+        val authId = authUser.get().id
 
-        var user: Users = Users()
+        val encryptPassword = passwordEncoder.encode(userForm.password)
+        val authorities = mutableSetOf<Authority>()
+        authorityRepository.findById(USER).ifPresent { authorities.add(it) }
+
+        var user: User = User()
         user.name = userForm.name
         user.email = userForm.email
-        user.password = userForm.password
+        user.password = encryptPassword
         user.phone = userForm.phone
         user.profile = fileName
-        user.createdUserId = 1
-        user.updatedUserId = 1
+        user.createdUserId = authId
+        user.updatedUserId = authId
+        user.authorities = userForm.authorities?.let { authorities ->
+            authorities.map { authorityRepository.findById(it) }
+                .filter { it.isPresent }
+                .mapTo(mutableSetOf()) { it.get() }
+        } ?: mutableSetOf()
 
         return try {
             val savedUser = userRepository.save(user)
@@ -123,8 +146,12 @@ class UserService(private val userRepository: UserRepository) {
 
         val fileName: String? = multipartFile.originalFilename?.let { StringUtils.cleanPath(it) }
 
-        val newUser: Users = oldUser.copy(name = user.name, email = user.email, type = user.type, phone = user.phone
-            , dob = user.dob, address = user.address, profile = fileName)
+        val auth = SecurityContextHolder.getContext().authentication
+        val authUser = userRepository.findByName(auth.name)
+        val authId = authUser.get().id
+
+        val newUser: User = oldUser.copy(name = user.name, email = user.email, type = user.type, phone = user.phone
+            , dob = user.dob, address = user.address, profile = fileName, updatedUserId = authId)
         try {
             userRepository.save(newUser)
             val uploadDir = "user-photos/" + oldUser.id + "/image"
@@ -159,12 +186,13 @@ class UserService(private val userRepository: UserRepository) {
      * @return ResponseEntity
      */
     fun changePwd(passwordForm: PasswordForm): ResponseEntity<String> {
-        return userRepository.findById(17).map { user ->
-            if (user.password == BigInteger(1, md.digest(passwordForm.password?.toByteArray())).toString(16).padStart(32, '0')) {
+        val auth = SecurityContextHolder.getContext().authentication
+        val authUser = userRepository.findByName(auth.name)
+        return userRepository.findById(authUser.get().id).map { user ->
+            if (passwordEncoder.matches(passwordForm.password, user.password)) {
                 userRepository.save(
                     user.copy(
-                        password = BigInteger(1, md.digest(passwordForm.newPassword?.toByteArray())).toString(16)
-                            .padStart(32, '0')
+                        password = passwordEncoder.encode(passwordForm.newPassword)
                     )
                 )
                 ResponseEntity.ok("successfully update")
@@ -173,4 +201,6 @@ class UserService(private val userRepository: UserRepository) {
         }.orElse(ResponseEntity.notFound().build()
         )
     }
+
+    fun isUserExists(name: String): Boolean = userRepository.findByName(name).isPresent
 }

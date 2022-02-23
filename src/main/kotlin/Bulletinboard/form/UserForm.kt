@@ -8,6 +8,9 @@ class UserForm {
 
     @field:NotNull(message = "The name is required.")
     val name: String? = null
+//
+//    @field:NotNull(message = "The name is required.")
+//    val username: String? = null
 
     @field:NotNull(message = "The email is required.")
     val email: String? = null
@@ -17,6 +20,8 @@ class UserForm {
 
     @field:NotNull(message = "Type is required")
     val type: Boolean = true
+
+    var authorities: Set<String>? = null
 
     @field:NotNull(message = "Ph no is required")
     val phone: String? = null

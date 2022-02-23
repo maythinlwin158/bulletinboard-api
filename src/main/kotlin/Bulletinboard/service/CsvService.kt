@@ -7,6 +7,7 @@ import com.codersee.csvupload.exception.BadRequestException
 import com.codersee.csvupload.exception.CsvImportException
 import com.opencsv.bean.CsvToBean
 import com.opencsv.bean.CsvToBeanBuilder
+import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.BufferedReader
@@ -14,7 +15,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 @Service
-class CsvService(private val postRepository: PostRepository) {
+class CsvService(private val postRepository: PostRepository, private val postService: PostService) {
 
     fun uploadCsvFile(file: MultipartFile): String {
         throwIfFileEmpty(file)
@@ -25,6 +26,9 @@ class CsvService(private val postRepository: PostRepository) {
             val csvToBean = createCSVToBean(fileReader)
             for (postForm in csvToBean.parse()) {
                 if (postForm.title.isNullOrEmpty() || postForm.description.isNullOrEmpty()) return "title and description cannot be null"
+                if (postForm.title?.let { postService.findByTitle(it) } == false) {
+                    return "title already exists"
+                }
                 var post: Posts = Posts()
                 post.title = postForm.title
                 post.description = postForm.description

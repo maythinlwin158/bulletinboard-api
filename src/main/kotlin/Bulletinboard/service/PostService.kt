@@ -6,13 +6,15 @@ import Bulletinboard.repository.PostRepository
 import Bulletinboard.DTO.PostListDTO
 import Bulletinboard.form.PostEditForm
 import Bulletinboard.form.PostForm
+import Bulletinboard.repository.UserRepository
 import org.springframework.data.domain.Pageable
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.util.*
 
 @Service
-class PostService(private val postRepository: PostRepository) {
+class PostService(private val postRepository: PostRepository, val userRepository: UserRepository) {
 
     /**
      * Get All Posts By Pagination
@@ -38,11 +40,16 @@ class PostService(private val postRepository: PostRepository) {
      * @return true/false Boolean
      */
     fun createPost(postForm: PostForm): Boolean {
+
+        val auth = SecurityContextHolder.getContext().authentication
+        val authUser = userRepository.findByName(auth.name)
+        val authId = authUser.get().id
+
           var post: Posts = Posts()
           post.title = postForm.title
           post.description = postForm.description
-          post.createdUserId = 1
-          post.updatedUserId = 1
+          post.createdUserId = authId
+          post.updatedUserId = authId
         return try {
             postRepository.save(post)
             true
@@ -83,15 +90,22 @@ class PostService(private val postRepository: PostRepository) {
      * @param post PostEditForm
      * @return true/false Boolean
      */
-    fun updatePostById(postId: Int, post: PostEditForm): Boolean = postRepository.findById(postId).map { oldPost ->
-        val newPost: Posts = oldPost.copy(title = post.title, description = post.description, status = post.status)
-        try {
-            postRepository.save(newPost)
-             true
-        } catch (e: Exception) {
-            false
-        }
-    }.orElse(false)
+    fun updatePostById(postId: Int, post: PostEditForm): Boolean {
+        val auth = SecurityContextHolder.getContext().authentication
+        val authUser = userRepository.findByName(auth.name)
+        val authId = authUser.get().id
+
+        return postRepository.findById(postId).map { oldPost ->
+                val newPost: Posts =
+                    oldPost.copy(title = post.title, description = post.description, status = post.status, updatedUserId = authId)
+                try {
+                    postRepository.save(newPost)
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+            }.orElse(false)
+    }
 
     /**
      * Delete Post By Id

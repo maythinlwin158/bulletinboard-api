@@ -53,13 +53,13 @@ class UserController(private val userService: UserService) {
         if (multipartFile.isEmpty) {
             return ResponseEntity.badRequest().body("profile can't be null")
         }
-        if (userForm.name?.let { userService.findByName(it) } == false) {
+        if (userForm.name?.let { userService.isUserExists(it) } == true) {
             return ResponseEntity.badRequest().body("name already exists")
         }
         if (userForm.email?.let { userService.findByEmail(it) } == false) {
             return ResponseEntity.badRequest().body("email already exists")
         }
-        return if (userService.createPost(userForm, multipartFile))
+        return if (userService.createUser(userForm, multipartFile))
             ResponseEntity.ok("success")
         else ResponseEntity.badRequest().body("insert failed")
     }

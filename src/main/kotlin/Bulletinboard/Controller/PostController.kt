@@ -121,7 +121,11 @@ class PostController(private val postService: PostService, private val csvServic
     fun uploadCsvFile(
         @RequestParam("file") file: MultipartFile
     ): ResponseEntity<String> {
+        if(file.isEmpty) {
+            return ResponseEntity.badRequest().body("file can't be null")
+        }
         val importedEntries = csvService.uploadCsvFile(file)
         return ResponseEntity.ok(importedEntries)
     }
+
 }

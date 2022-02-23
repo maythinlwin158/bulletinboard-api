@@ -1,9 +1,7 @@
 package Bulletinboard.model
 
-import org.hibernate.validator.constraints.UniqueElements
 import java.time.LocalDateTime
 import javax.persistence.*
-import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 
 @Entity
@@ -42,10 +40,10 @@ data class Posts(
 
     @ManyToOne
     @JoinColumn(name = "updated_user_id", insertable = false, updatable = false)
-    val updatedUser: Users? = null,
+    val updatedUser: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "created_user_id", insertable = false, updatable = false)
-    val user: Users? = null,
+    val user: User? = null,
 )
 

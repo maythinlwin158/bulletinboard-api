@@ -1,13 +1,15 @@
 package Bulletinboard.model
 
-import java.time.LocalDate
+import org.hibernate.annotations.BatchSize
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.*
 import javax.validation.constraints.Size
 
 @Entity
-data class Users(
+@Table
+data class User(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Int = 0,
@@ -21,10 +23,8 @@ data class Users(
     @Column(nullable = false)
     var password: String? = null,
 
-    @Column(nullable = false)
     var profile: String? = null,
 
-    @Column(nullable = false)
     val type: Boolean = true,
 
     @get: Size(max = 20)
@@ -52,9 +52,17 @@ data class Users(
     @Column(name = "deleted_at")
     val deletedAt: LocalDateTime? = null,
 
-    @ManyToOne
-    @JoinColumn(name = "created_user_id", insertable = false, updatable = false)
-    val user: Users? = null,
-//    @OneToMany(cascade = [CascadeType.ALL], mappedBy = "user")
-//    val posts: List<Posts>
-)
+
+    @ManyToMany
+    @JoinTable(
+        name = "user_authority",
+        joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")],
+        inverseJoinColumns = [JoinColumn(name = "authority_name", referencedColumnName = "name")]
+    )
+    @BatchSize(size = 20)
+    var authorities: MutableSet<Authority> = mutableSetOf(),
+) {
+    override fun toString(): String {
+        return "User(username='$name', password='$password', email=$email, authorities=$authorities, createdBy=$createdUserId, createdDate=$createdAt, lastModifiedBy=$updatedUserId, lastModifiedDate=$updatedAt, id=$id)"
+    }
+}
